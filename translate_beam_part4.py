@@ -29,8 +29,11 @@ def get_args():
 
     # Add beam search arguments
     parser.add_argument('--beam-size', default=4, type=int, help='number of hypotheses expanded in beam search')
+
     # Add the alpha parameter of beam search length normalization
     parser.add_argument('--alpha', default=0.1, type=float, help='alpha of length normalization')
+    # Add the gamma parameter of diverse beam search
+    parser.add_argument('--gamma', default=1, type=float, help='gamma for diverse beam search')
     return parser.parse_args()
 
 
@@ -164,9 +167,9 @@ def main(args):
 
                     # length normalization
                     lp_y_final = ((5 + node.length)/(5+1))**args.alpha
-                    logp_final = node.logp/lp_y_final
+                    logp_final = node.logp/lp_y_final - args.gamma*(j+1)
                     lp_y_new = ((5 + node.length + 1)/(5+1))**args.alpha
-                    logp_new = (node.logp + log_p)/lp_y_new
+                    logp_new = (node.logp + log_p)/lp_y_new - args.gamma*(j+1)
 
                     # __QUESTION 4: Why do we treat nodes that generated the end-of-sentence token differently?
 
@@ -189,8 +192,8 @@ def main(args):
             for search in searches:
                 search.prune()
 
-        # Segment into sentences
-        best_sents = torch.stack([search.get_best()[1].sequence[1:] for search in searches])
+        # Segment into sentences (3-best candidates)
+        best_sents = torch.stack([n[1].sequence[1:] for s in searches for n in s.get_best()])
         decoded_batch = best_sents.numpy()
 
         output_sentences = [decoded_batch[row, :] for row in range(decoded_batch.shape[0])]
@@ -208,15 +211,18 @@ def main(args):
         # Convert arrays of indices into strings of words
         output_sentences = [tgt_dict.string(sent) for sent in output_sentences]
 
+        # Use tuple indices and % operation to make sure the following step won't go overflow and to make the 'write to file'
+        # operation write the 3 best candidates for one sentence together 
+
         for ii, sent in enumerate(output_sentences):
-            all_hyps[int(sample['id'].data[ii])] = sent
+            all_hyps[(int(sample['id'].data[int(ii/3)]),int(ii%3))] = sent
 
 
     # Write to file
     if args.output is not None:
         with open(args.output, 'w') as out_file:
             for sent_id in range(len(all_hyps.keys())):
-                out_file.write(all_hyps[sent_id] + '\n')
+                out_file.write(all_hyps[(int(sent_id/3),int(sent_id%3))] + '\n')
 
 
 if __name__ == '__main__':

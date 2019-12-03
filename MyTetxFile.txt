@@ -1,0 +1,22 @@
+------part1------
+beam size: 2  BLEU: 21.3
+beam size: 3  BLEU: 21.5
+beam size: 4  BLEU: 21.9
+beam size: 5  BLEU: 21.6
+beam size: 6  BLEU: 21.6
+beam size: 7  BLEU: 21.6
+beam size: 8  BLEU: 21.4
+
+------part3------(beam size: 4)
+alpha: 0  BLEU: 21.9
+alpha: 0.1  BLEU: 22.4
+alpha: 0.15  BLEU: 22.3
+alpha: 0.2  BLEU: 22.4
+alpha: 0.3  BLEU: 21.8
+alpha: 0.4  BLEU: 21.2
+alpha: 0.7  BLEU: 21.0
+alpha: 1  BLEU: 20.0
+
+------part4------(beam size: 4, alpha: 0.1)
+try different gamma
+
